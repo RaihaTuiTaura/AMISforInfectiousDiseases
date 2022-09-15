@@ -281,24 +281,6 @@ update_according_to_ess_value <- function(weight_matrix, ess, target_size,log) {
     return(rowSums(weight_matrix[,active_cols,drop=FALSE]))
   }
 }
-#' Systematic resampling function
-#' 
-#' Implement systematic resampling to reduce variance in weighted particle selection
-#' @param nsamples number of samples to draw
-#' @param weights vector of length equal to the number of particles, containing their weights
-#' @param log logical indicating if weights are log-weights
-#' @return vector of indices of the sampled particles 
-systematic_sample <- function(nsamples,weights,log=F) {
-  if (log) {
-    M<-max(weights)
-    log_sum_weights<-M+log(sum(exp(weights-M)))
-    cum <- cumsum(exp(weights-log_sum_weights))
-  } else {
-    cum <- cumsum(weights)/sum(weights) # cumulative sum of normalised weights
-  }
-  u <- runif(1)/nsamples+0:(nsamples-1)/nsamples
-  return(1+matrix(rep(u,length(weights))>rep(cum,each=nsamples),nsamples,length(weights))%*%matrix(1,length(weights),1))
-}
 #' Fit mixture to weighted sample
 #' 
 #' Weights are implemented by using systematic resampling to obtain an unweighted set of parameters.
@@ -319,8 +301,9 @@ systematic_sample <- function(nsamples,weights,log=F) {
 #'
 #' @seealso \code{\link{fit_mixture}}
 weighted_mixture <- function(parameters, nsamples, weights, log=F) {
-  sampled_idx <- systematic_sample(nsamples,weights,log)
-  return(fit_mixture(parameters[sampled_idx,,drop=FALSE]))
+  if (log==T){weights=exp(weights)}
+  print(weights)
+  return(fit_mixture(parameters[,,drop=FALSE],weights))
 }
 #' Sample new parameters
 #'
@@ -429,3 +412,4 @@ compute_prior_proposal_ratio <- function(components, param, prior_density, df, l
     return(prior_density/(rowSums(q_terms)+prior_density))
   }
 }
+
