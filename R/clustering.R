@@ -15,7 +15,7 @@
 #' \item{\code{BIC}}{The BIC of the chosen mixture.}
 #' \item{\code{ModelName}}{The model name from the package \code{mclust}.}
 #' }
-fit_mixture<-function(dat,weights,max.components=10) {
+fit_mixture<-function(dat,max.components=10) {
   require(mclust)
   n<-nrow(dat)
   d<-ncol(dat)
@@ -31,6 +31,7 @@ fit_mixture<-function(dat,weights,max.components=10) {
   }
   clustering<-mclust::mvn(modelName=modelName,data=dat)
   BIC <- bic(modelName=modelName,loglik=clustering$loglik,n=n,d=d,G=1)
+  print(BIC)
   # fit agglomerative clustering model
   if (d==1) {
     modelName<-"V"
@@ -42,9 +43,9 @@ fit_mixture<-function(dat,weights,max.components=10) {
   for (g in 2:max.components) {
     z<-unmap(cut.tree[,g-1]) # extract cluster indices
     # Run EM algorithm
-    em <- me.weighted(modelName=modelName,data=dat,z=z,weights=weights)
-    em$BIC <- bic(modelName=modelName,loglik=em$loglik,n=n,d=d,G=g)
-    if (!is.na(em$BIC) && em$BIC<BIC) { #check bic function def
+    em <- me(modelName=modelName,data=dat,z=z)
+    em$BIC <- bic(modelName=modelName,loglik=em$loglik,n=n,d=d,G=g) 
+    if (!is.na(em$BIC) && em$BIC>BIC) { #mclust:::bic calculates the negative BIC
       clustering<-em
       G<-g
       BIC<-em$BIC
